@@ -1,75 +1,69 @@
--- Вывести название и стоимость в USD одного самого дорогого проданного товара
+-- Вывести клиентов из Germany, у которых в имени есть вхождение a, и клиентов из France, у которых в имени есть вхождение b
 
-SELECT 
-    products.ProductName,
-    ROUND(products.Price*1.06, 2) as price_usd
-    
-FROM order_details
+SELECT * 
+FROM Customers
 
-JOIN products ON order_details.ProductID=products.ProductID
- 
-ORDER BY Price DESC
-LIMIT 1;
+WHERE Country='Germany' AND CustomerName LIKE '%a%'
+OR
+Country='France' AND CustomerName LIKE '%b%'
 
 
 
--- Вывести два самых дорогих товара из категории Beverages из USA
+-- Вывести два самых дешевых товара, названия которых заканчиваются на u.
 
-SELECT 
-    products.ProductName,
-    categories.CategoryName,
-    suppliers.Country,
-    products.Price
-    
-FROM products
+SELECT * 
+FROM Products
 
-JOIN suppliers ON products.SupplierID=suppliers.SupplierID
-JOIN categories ON products.CategoryID=categories.CategoryID
-
-WHERE
-    categories.CategoryName='Beverages'
-    AND
-    suppliers.Country='USA'
-    
-ORDER BY Price desc
-LIMIT 2   
+WHERE ProductName LIKE '%u'
+ORDER BY Price
+LIMIT 2
 
 
 
--- Вывести заказы, добавив поле доставлено (или нет), учитывая, что доставлены только 10248 и 10249
+-- Применить постоянную скидку к товарам из категорий 1 и 3, причем:
+--       для категории 1 - скидка 29%
+--       для категории 3 - 0.5%
 
-SELECT * ,
+UPDATE Products
+SET 
+	Price = CASE
+	WHEN CategoryID = 1 THEN Price * .71
+	WHEN CategoryID = 3 THEN Price * .005
+	END
+WHERE CategoryID IN (1, 3) 
 
-    CASE WHEN
-	orders.OrderID IN(10248, 10249)
-        THEN true
-        ELSE false
-    END AS was_delivered    
-	    
-FROM orders
+-- второй способ
 
-
-
--- Вывести список стран, которые поставляют морепродукты
-
-SELECT DISTINCT
-    suppliers.Country
-    
-FROM products
-
-JOIN suppliers ON products.SupplierID=suppliers.SupplierID
-JOIN categories ON products.CategoryID=categories.CategoryID
-
-WHERE
-    categories.CategoryID=8
-
-
-
--- Очистить поле ContactName у всех клиентов не из China
-
-UPDATE customers
+UPDATE Products
 SET
-    ContactName=''
-WHERE 
-    Country!='China'	
+	Price = CASE
+	WHEN CategoryID = 1 THEN Price * .71
+	WHEN CategoryID = 3 THEN Price * .005
+    ELSE Price
+	END
+
+
+
+-- Вывести данные о компаниях-перевозчиках, причем скрыть номера телефонов тех компаний, которые из Australia (проекция: название_компании, номер_телефона)
+
+UPDATE Suppliers
+SET Phone=null
+    WHERE Country='Australia';
+SELECT
+    SupplierName,
+    Phone
+FROM Suppliers
+
+
+-- Вывести города клиентов не из Germany и города поставщиков не из USA
+
+SELECT City
+FROM Customers
+WHERE Country!='Germany'
+
+UNION
+
+SELECT City
+FROM Suppliers
+WHERE Country!='USA'	
  
